@@ -73,7 +73,7 @@ class Pico_DLFile{
     $urlpart = parse_url($_SERVER['REQUEST_URI']);
     
 		$path = ROOT_DIR . $this->content_dir . $urlpart['path'];
-    if ($urlpart['query'] == "download" && file_exists($path)) {
+    if (isset($urlpart['query']) && $urlpart['query'] == "download" && file_exists($path)) {
       // ダウンロード
       $pathinfo = pathinfo($path);
       header($_SERVER['SERVER_PROTOCOL'].' 200 OK');
