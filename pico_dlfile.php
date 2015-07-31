@@ -85,7 +85,7 @@ class Pico_DLFile{
       echo readfile($path);
       exit;
     }
-    $twig_vars['download_url'] = $this->download_url;
+    $twig_vars['download_url'] = $urlpart['path'];
   }
 }
 
