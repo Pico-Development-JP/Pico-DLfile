@@ -8,6 +8,27 @@ Pico Plugin:contentフォルダ配下の任意ファイルをダウンロード�
 ex).
     Download: ダウンロード::file.zip, file2.zip
 
+### Pico1.0から使えるようになった記述
+Pico1.0からメタデータがYAML形式に変更されたため、以下のような記述も可能です。
+
+```yaml
+  URL: 
+    - リンクテキスト::リンクURL
+    - リンクテキスト::リンクURL
+```
+
+または
+
+```yaml
+  URL: 
+    - 
+      text: リンクテキスト
+      file: リンクURL
+    - 
+      text: リンクテキスト
+      file: リンクURL
+```
+
 ##  追加するTwig変数
 
  * download: ダウンロードするファイルのURL

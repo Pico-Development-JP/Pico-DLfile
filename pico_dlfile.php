@@ -8,54 +8,65 @@
  * @license http://opensource.org/licenses/MIT
  * @version 1.0
  */
-class Pico_DLFile{
+class Pico_DLFile extends AbstractPicoPlugin{
 
-  private $base_url;
-  
+  protected $enabled = false;
+
   private $currentpath;
-  
-  private $content_dir;
   
   private $download_text;
 
-  public function config_loaded(&$settings) {
-    $this->base_url = $settings['base_url'];
-    $this->content_dir = $settings['content_dir'];
-    $this->download_text = empty($settings['dlfile']['text']) ? "Download" : $settings['dlfile']['text'];
+  public function onConfigLoaded(array &$config)
+  {
+    $this->download_text = empty($config['dlfile']['text']) ? "Download" : $config['dlfile']['text'];
   }
 
-  public function request_url(&$url)
+  public function onRequestUrl(&$url)
   {
     $this->currenturl = $url;
   }
-    
-  public function before_read_file_meta(&$headers)
+
+  public function onMetaHeaders(array &$headers)
   {
   	$headers['download'] = 'Download';
   }
-	
-	public function get_page_data(&$data, $page_meta)
-	{
-    $file_url = substr($data["url"], strlen($this->base_url));
+
+  public function onSinglePageLoaded(array &$pageData)
+  {
+    $page_meta = $pageData['meta'];
+    $base_url = $this->getBaseUrl();
+    $file_url = substr($pageData["url"], strlen($base_url));
     if($file_url[strlen($file_url) - 1] == "/") $file_url .= 'index';
     $filematch = preg_match('/^(.+\/)[\w\.-]+?$/', $file_url, $parts);
     
     if(!empty($page_meta['download'])){
-      $downloads = explode(",", $page_meta['download']);
+      if(is_array($page_meta['download']))
+      {
+        $downloads = $page_meta['download'];
+      }else{
+        $downloads = explode(",", $page_meta['download']);
+      }
       $downloadlist = array();
       // ダウンロード要素のリストアップ
       for($i = 0; $i < count($downloads); $i++){
-        $n = explode("::", $downloads[$i], 2);
-        $name = count($n) >= 2 ? $n[0] : $this->download_text;
-        $path = count($n) >= 2 ? $n[1] : $downloads[$i];
+        $name;
+        $path;
+        if(is_array($downloads[$i])){
+          $path = $downloads[$i]['file'];
+          $name = $downloads[$i]['text'];
+        }else{
+          $n = explode("::", $downloads[$i], 2);
+          $name = count($n) >= 2 ? $n[0] : $this->download_text;
+          $path = count($n) >= 2 ? $n[1] : $downloads[$i];
+        }
         $e = false;
         if (strlen($path) > 0 && $filematch) {
           if($path[0] == '.'){
             // 拡張子のみ＝コンテンツ名.拡張子に変換
-            $u = $this->base_url . "/" . $this->content_dir . "$parts[0]$path" . '?download';
+            $u = $base_url . "dl/$parts[0]$path";
           }else if(!preg_match('/^(https?|ftp)/', $path)){
             // 通常のファイル＝ベースURLを付与してそのままダウンロードURLとする
-            $u = $this->base_url . "/" . $this->content_dir . "$parts[1]$path" . '?download';
+            $u = $base_url . "dl/$parts[1]$path";
           }else{
             // httpまたはftpのURL。
             $u = $path;
@@ -64,16 +75,15 @@ class Pico_DLFile{
           $downloadlist[] = array('url' => $u, 'text' => $name, 'external' => $e);
         }
       }
-      $data['download'] = $downloadlist;
+      $pageData['download'] = $downloadlist;
     }
   }
     
-  public function before_render(&$twig_vars, &$twig) {
-    // Pico内部でクエリ文字列が切り取られてしまうため、生のリクエストURIを使用
-    $urlpart = parse_url($_SERVER['REQUEST_URI']);
-    
-		$path = ROOT_DIR . $this->content_dir . $urlpart['path'];
-    if (isset($urlpart['query']) && $urlpart['query'] == "download" && file_exists($path)) {
+  public function onPageRendering(Twig_Environment &$twig, array &$twigVariables, &$templateName)
+  {
+    $content_dir = $this->getConfig("content_dir");
+		$path = $content_dir . substr($this->currenturl, 3);
+    if (file_exists($path)) {
       // ダウンロード
       $pathinfo = pathinfo($path);
       header($_SERVER['SERVER_PROTOCOL'].' 200 OK');
@@ -85,7 +95,6 @@ class Pico_DLFile{
       echo readfile($path);
       exit;
     }
-    $twig_vars['download_url'] = $urlpart['path'];
   }
 }
 
