@@ -81,19 +81,21 @@ class Pico_DLFile extends AbstractPicoPlugin{
     
   public function onPageRendering(Twig_Environment &$twig, array &$twigVariables, &$templateName)
   {
-    $content_dir = $this->getConfig("content_dir");
-		$path = $content_dir . substr($this->currenturl, 3);
-    if (file_exists($path)) {
-      // ダウンロード
-      $pathinfo = pathinfo($path);
-      header($_SERVER['SERVER_PROTOCOL'].' 200 OK');
-      header('Content-Type: application/x-download');
-      header('Content-Transfer-Encoding: Binary');
-      header(sprintf('Content-disposition: attachment; filename="%s"', $pathinfo['basename']));
-      ob_clean(); // clean the output buffer
-      flush();
-      echo readfile($path);
-      exit;
+    if(strpos($this->currenturl, "dl/") === 0) {
+      $content_dir = $this->getConfig("content_dir");
+      $path = $content_dir . substr($this->currenturl, 3);
+      if (file_exists($path)) {
+        // ダウンロード
+        $pathinfo = pathinfo($path);
+        header($_SERVER['SERVER_PROTOCOL'].' 200 OK');
+        header('Content-Type: application/x-download');
+        header('Content-Transfer-Encoding: Binary');
+        header(sprintf('Content-disposition: attachment; filename="%s"', $pathinfo['basename']));
+        ob_clean(); // clean the output buffer
+        flush();
+        echo readfile($path);
+        exit;
+      }
     }
   }
 }
