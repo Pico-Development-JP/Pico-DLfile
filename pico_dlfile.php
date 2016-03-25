@@ -36,7 +36,11 @@ class Pico_DLFile extends AbstractPicoPlugin{
     $page_meta = $pageData['meta'];
     $base_url = $this->getBaseUrl();
     $file_url = substr($pageData["url"], strlen($base_url));
-    if($file_url[strlen($file_url) - 1] == "/") $file_url .= 'index';
+    $file_url_len = strlen($file_url);
+    if($file_url_len && $file_url[$file_url_len - 1] == "/")
+    {
+      $file_url .= 'index';
+    }
     $filematch = preg_match('/^(.+\/)[\w\.-]+?$/', $file_url, $parts);
     
     if(!empty($page_meta['download'])){
